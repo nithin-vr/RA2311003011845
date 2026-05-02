@@ -1,18 +1,23 @@
-import { CONFIG } from "../config.js";
+import { appConfig } from "../config.js";
 import { getToken } from "./auth";
 
-export async function logFrontend(level: string, pkg: string, message: string) {
+export async function logFrontend(level: string, pkg: string, msg: string) {
   try {
-    const token = await getToken();
-    await fetch(`${CONFIG.BASE_URL}/logs`, {
+    const tok = await getToken();
+    await fetch(`${appConfig.apiBase}/logs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${tok}`
       },
-      body: JSON.stringify({ stack: "frontend", level, package: pkg, message })
+      body: JSON.stringify({
+        stack: "frontend",
+        level,
+        package: pkg,
+        message: msg
+      })
     });
   } catch {
-    // silently fail
+    // don't let logging errors affect the UI
   }
 }

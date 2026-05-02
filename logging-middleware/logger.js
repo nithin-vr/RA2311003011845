@@ -1,24 +1,25 @@
-import { CONFIG } from "./config.js";
+import { appConfig } from "./config.js";
 import { getAuthToken } from "./auth.js";
 
+// sends a log entry to the remote logging service
 export async function Log(stack, level, pkg, message) {
   try {
-    const token = await getAuthToken();
+    const tok = await getAuthToken();
 
-    await fetch(`${CONFIG.BASE_URL}/logs`, {
+    await fetch(`${appConfig.apiBase}/logs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${tok}`
       },
       body: JSON.stringify({
-        stack: stack,
-        level: level,
+        stack,
+        level,
         package: pkg,
-        message: message
+        message
       })
     });
-  } catch (err) {
-    // silently fail
+  } catch (_err) {
+    // intentionally silent — logging should never crash the app
   }
 }

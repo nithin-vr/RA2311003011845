@@ -4,50 +4,64 @@ import { useEffect, useState } from "react";
 import { fetchNotifications } from "../../services/api";
 import { sortByPriority } from "../../utils/priority";
 import { logFrontend } from "../../utils/logger";
-import { Box, Button, Card, CardContent, Chip, TextField, Typography } from "@mui/material";
+import {
+  Box, Button, Card, CardContent,
+  Chip, TextField, Typography, Stack
+} from "@mui/material";
 import { useRouter } from "next/navigation";
 
-export default function PriorityPage() {
-  const [data, setData] = useState<any[]>([]);
-  const [limit, setLimit] = useState(10);
-  const router = useRouter();
+export default function PriorityInbox() {
+  const [topItems, setTopItems] = useState<any[]>([]);
+  const [showCount, setShowCount] = useState(10);
+  const nav = useRouter();
 
   useEffect(() => {
-    async function load() {
+    async function loadPriority() {
       try {
-        await logFrontend("info", "component", "Loading priority notifications");
-        const res = await fetchNotifications(1, 50);
-        const sorted = sortByPriority(res.notifications);
-        setData(sorted.slice(0, limit));
-        await logFrontend("info", "component", `Showing top ${limit} priority notifications`);
+        await logFrontend("info", "component", "Fetching notifications for priority view");
+        const resp = await fetchNotifications(1, 50);
+        const ranked = sortByPriority(resp.notifications);
+        setTopItems(ranked.slice(0, showCount));
+        await logFrontend("info", "component", `Priority view showing top ${showCount}`);
       } catch {
-        await logFrontend("error", "api", "Failed fetching priority notifications");
+        await logFrontend("error", "api", "Failed to load priority notifications");
       }
     }
-    load();
-  }, [limit]);
+    loadPriority();
+  }, [showCount]);
+
+  const chipColor = (i: number) => i === 0 ? "error" : i < 3 ? "warning" : "default";
 
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
-      <Button onClick={() => router.push("/")} sx={{ mb: 2 }}>← Back</Button>
-      <Typography variant="h4" gutterBottom>Priority Notifications</Typography>
+      <Button onClick={() => nav.push("/")} sx={{ mb: 2 }}>← Home</Button>
+      <Typography variant="h4" gutterBottom>Priority Inbox</Typography>
 
       <TextField
-        label="Top N"
+        label="Show Top N"
         type="number"
-        value={limit}
-        onChange={(e) => setLimit(Number(e.target.value))}
-        sx={{ mb: 3, width: 120 }}
+        value={showCount}
+        onChange={(e) => setShowCount(Math.max(1, Number(e.target.value)))}
+        sx={{ mb: 3, width: 130 }}
         slotProps={{ htmlInput: { min: 1, max: 50 } }}
       />
 
-      {data.map((n, i) => (
-        <Card key={n.ID} sx={{ margin: 2, backgroundColor: i < 3 ? "#fff8e1" : "#ffffff" }}>
+      {topItems.map((item, idx) => (
+        <Card
+          key={item.ID}
+          sx={{
+            margin: 2,
+            backgroundColor: idx < 3 ? "#fff8e1" : "#ffffff",
+            borderLeft: `4px solid ${idx < 3 ? "#f9a825" : "#e0e0e0"}`
+          }}
+        >
           <CardContent>
-            <Typography variant="h6">{n.Message}</Typography>
-            <Typography color="text.secondary">{n.Type}</Typography>
-            <Typography variant="caption">{n.Timestamp}</Typography>
-            <Chip label={`#${i + 1}`} size="small" sx={{ ml: 1 }} />
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6">{item.Message}</Typography>
+              <Chip label={`#${idx + 1}`} color={chipColor(idx)} size="small" />
+            </Stack>
+            <Typography color="text.secondary" sx={{ mt: 0.5 }}>{item.Type}</Typography>
+            <Typography variant="caption">{item.Timestamp}</Typography>
           </CardContent>
         </Card>
       ))}

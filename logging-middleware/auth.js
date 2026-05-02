@@ -1,24 +1,25 @@
-import { CONFIG } from "./config.js";
+import { appConfig } from "./config.js";
 
-let token = null;
+// cache token so we don't keep hitting auth endpoint
+let cachedToken = null;
 
 export async function getAuthToken() {
-  if (token) return token;
+  if (cachedToken) return cachedToken;
 
-  const response = await fetch(`${CONFIG.BASE_URL}/auth`, {
+  const resp = await fetch(`${appConfig.apiBase}/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: CONFIG.EMAIL,
-      name: CONFIG.NAME,
-      rollNo: CONFIG.ROLL_NO,
-      accessCode: CONFIG.ACCESS_CODE,
-      clientID: CONFIG.CLIENT_ID,
-      clientSecret: CONFIG.CLIENT_SECRET
+      email: appConfig.userEmail,
+      name: appConfig.userName,
+      rollNo: appConfig.userRoll,
+      accessCode: appConfig.accessCode,
+      clientID: appConfig.clientId,
+      clientSecret: appConfig.clientSecret
     })
   });
 
-  const data = await response.json();
-  token = data.access_token;
-  return token;
+  const result = await resp.json();
+  cachedToken = result.access_token;
+  return cachedToken;
 }

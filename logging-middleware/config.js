@@ -1,9 +1,10 @@
-export const CONFIG = {
-  BASE_URL: "http://20.207.122.201/evaluation-service",
-  EMAIL: "vn9503@srmist.edu.in",
-  NAME: "vr nithin",
-  ROLL_NO: "ra2311003011845",
-  ACCESS_CODE: "QkbpxH",
-  CLIENT_ID: "28b1722c-4eff-4d66-a424-eb469c91024e",
-  CLIENT_SECRET: "nVyrxWaDzmjJBQGy"
+// app credentials and base endpoint
+export const appConfig = {
+  apiBase: "http://20.207.122.201/evaluation-service",
+  userEmail: "vn9503@srmist.edu.in",
+  userName: "vr nithin",
+  userRoll: "ra2311003011845",
+  accessCode: "QkbpxH",
+  clientId: "28b1722c-4eff-4d66-a424-eb469c91024e",
+  clientSecret: "nVyrxWaDzmjJBQGy"
 };

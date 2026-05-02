@@ -1,24 +1,24 @@
-import { CONFIG } from "../config.js";
+import { appConfig } from "../config.js";
 
-let token: string | null = null;
+let savedToken: string | null = null;
 
 export async function getToken(): Promise<string> {
-  if (token) return token;
+  if (savedToken) return savedToken;
 
-  const res = await fetch(`${CONFIG.BASE_URL}/auth`, {
+  const resp = await fetch(`${appConfig.apiBase}/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: CONFIG.EMAIL,
-      name: CONFIG.NAME,
-      rollNo: CONFIG.ROLL_NO,
-      accessCode: CONFIG.ACCESS_CODE,
-      clientID: CONFIG.CLIENT_ID,
-      clientSecret: CONFIG.CLIENT_SECRET
+      email: appConfig.userEmail,
+      name: appConfig.userName,
+      rollNo: appConfig.userRoll,
+      accessCode: appConfig.accessCode,
+      clientID: appConfig.clientId,
+      clientSecret: appConfig.clientSecret
     })
   });
 
-  const data = await res.json();
-  token = data.access_token;
-  return token as string;
+  const json = await resp.json();
+  savedToken = json.access_token;
+  return savedToken as string;
 }

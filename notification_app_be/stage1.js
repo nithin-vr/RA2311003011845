@@ -2,58 +2,55 @@ import fetch from "node-fetch";
 import { Log } from "../logging-middleware/logger.js";
 import { getAuthToken } from "../logging-middleware/auth.js";
 
-const weightMap = {
+// higher number = more important
+const priorityMap = {
   Placement: 3,
   Result: 2,
   Event: 1
 };
 
-function getScore(notification) {
-  const weight = weightMap[notification.Type];
-  const time = new Date(notification.Timestamp).getTime();
-  return { weight, time };
+function buildScore(item) {
+  const w = priorityMap[item.Type] ?? 0;
+  const t = new Date(item.Timestamp).getTime();
+  return { w, t };
 }
 
-function compare(a, b) {
-  if (a.weight !== b.weight) return b.weight - a.weight;
-  return b.time - a.time;
+function rankNotifications(a, b) {
+  if (a.w !== b.w) return b.w - a.w;
+  return b.t - a.t;
 }
 
-async function getTopNotifications() {
+async function runStage1() {
   try {
-    await Log("backend", "info", "handler", "Fetching notifications");
+    await Log("backend", "info", "handler", "Starting stage1 — fetching notifications from API");
 
-    const token = await getAuthToken();
+    const tok = await getAuthToken();
 
-    const response = await fetch(
-      "http://20.207.122.201/evaluation-service/notifications",
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
-
-    const data = await response.json();
-
-    await Log("backend", "info", "handler", "Fetched notifications successfully");
-
-    const notifications = data.notifications;
-
-    const scored = notifications.map(n => {
-      const { weight, time } = getScore(n);
-      return { ...n, weight, time };
+    const resp = await fetch("http://20.207.122.201/evaluation-service/notifications", {
+      headers: { Authorization: `Bearer ${tok}` }
     });
 
-    scored.sort(compare);
+    const payload = await resp.json();
+    await Log("backend", "info", "handler", "Notifications fetched successfully");
 
-    const top10 = scored.slice(0, 10);
+    const list = payload.notifications;
 
-    await Log("backend", "info", "handler", "Computed top 10 notifications");
+    // attach scores then sort
+    const withScores = list.map(item => {
+      const { w, t } = buildScore(item);
+      return { ...item, w, t };
+    });
 
-    await Log("backend", "info", "handler", `Top 10 notifications: ${JSON.stringify(top10)}`);
+    withScores.sort(rankNotifications);
 
-  } catch (err) {
-    await Log("backend", "error", "handler", "Error in processing notifications");
+    const topResults = withScores.slice(0, 10);
+
+    await Log("backend", "info", "handler", "Top 10 computed successfully");
+    await Log("backend", "info", "handler", `Result: ${JSON.stringify(topResults)}`);
+
+  } catch (e) {
+    await Log("backend", "error", "handler", "Stage1 failed while processing notifications");
   }
 }
 
-getTopNotifications();
+runStage1();

@@ -1,14 +1,14 @@
-const weightMap: any = {
+const typeWeight: Record<string, number> = {
   Placement: 3,
   Result: 2,
   Event: 1
 };
 
-export function sortByPriority(notifications: any[]) {
-  return [...notifications].sort((a, b) => {
-    const w1 = weightMap[a.Type];
-    const w2 = weightMap[b.Type];
-    if (w1 !== w2) return w2 - w1;
-    return new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime();
+export function sortByPriority(items: any[]) {
+  return [...items].sort((x, y) => {
+    const wx = typeWeight[x.Type] ?? 0;
+    const wy = typeWeight[y.Type] ?? 0;
+    if (wx !== wy) return wy - wx;
+    return new Date(y.Timestamp).getTime() - new Date(x.Timestamp).getTime();
   });
 }
