@@ -9,67 +9,72 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 
-export default function NotificationsPage() {
+export default function AllNotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [readIds, setReadIds] = useState<string[]>([]);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeFilter, setActiveFilter] = useState("");
-  const nav = useRouter();
+  const [selectedType, setSelectedType] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
 
-  // load read state from storage on mount
+  // Restore which notifications the user has already read from their last session
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("readNotifs") || "[]");
-    setReadIds(saved);
+    const previouslyRead = JSON.parse(localStorage.getItem("readNotifs") || "[]");
+    setReadNotificationIds(previouslyRead);
   }, []);
 
-  // re-fetch whenever page or filter changes
+  // Re-fetch whenever the user changes the page or switches the type filter
   useEffect(() => {
-    async function loadData() {
+    async function loadNotifications() {
       try {
-        const resp = await fetchNotifications(currentPage, 10, activeFilter);
-        setNotifications(resp.notifications);
-        await logFrontend("info", "component", `Loaded page ${currentPage}, filter=${activeFilter || "none"}`);
-      } catch {
-        await logFrontend("error", "api", "Could not load notifications");
+        setErrorMessage("");
+        const data = await fetchNotifications(currentPage, 10, selectedType);
+        if (!data.notifications) throw new Error(JSON.stringify(data));
+        setNotifications(data.notifications);
+        logFrontend("info", "component", `Loaded page ${currentPage}, filter: ${selectedType || "none"}`);
+      } catch (error: any) {
+        setErrorMessage(error.message || "Failed to load notifications");
+        setNotifications([]);
+        logFrontend("error", "api", "Failed to fetch notifications from the API");
       }
     }
-    loadData();
-  }, [currentPage, activeFilter]);
+    loadNotifications();
+  }, [currentPage, selectedType]);
 
-  function handleFilterChange(val: string) {
-    setActiveFilter(val);
-    setCurrentPage(1);
-    logFrontend("info", "component", `Filter set to: ${val || "all"}`);
+  function handleTypeFilterChange(type: string) {
+    setSelectedType(type);
+    setCurrentPage(1); // Reset to first page whenever the filter changes
+    logFrontend("info", "component", `Notification type filter changed to: ${type || "all"}`);
   }
 
-  function markAsRead(id: string) {
-    if (readIds.includes(id)) return;
-    const updated = [...readIds, id];
-    setReadIds(updated);
-    localStorage.setItem("readNotifs", JSON.stringify(updated));
-    logFrontend("info", "component", `Marked notification ${id} as read`);
+  function markNotificationAsRead(id: string) {
+    if (readNotificationIds.includes(id)) return; // Already marked, nothing to do
+    const updatedReadIds = [...readNotificationIds, id];
+    setReadNotificationIds(updatedReadIds);
+    localStorage.setItem("readNotifs", JSON.stringify(updatedReadIds));
+    logFrontend("info", "component", `Notification ${id} marked as read`);
   }
 
-  function goToPrev() {
-    const next = currentPage - 1;
-    setCurrentPage(next);
-    logFrontend("info", "component", `Navigated to page ${next}`);
+  function goToPreviousPage() {
+    const previousPage = currentPage - 1;
+    setCurrentPage(previousPage);
+    logFrontend("info", "component", `Navigated to page ${previousPage}`);
   }
 
-  function goToNext() {
-    const next = currentPage + 1;
-    setCurrentPage(next);
-    logFrontend("info", "component", `Navigated to page ${next}`);
+  function goToNextPage() {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    logFrontend("info", "component", `Navigated to page ${nextPage}`);
   }
 
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
-      <Button onClick={() => nav.push("/")} sx={{ mb: 2 }}>← Home</Button>
+      <Button onClick={() => router.push("/")} sx={{ mb: 2 }}>← Home</Button>
       <Typography variant="h4" gutterBottom>All Notifications</Typography>
 
       <Select
-        value={activeFilter}
-        onChange={(e) => handleFilterChange(e.target.value)}
+        value={selectedType}
+        onChange={(e) => handleTypeFilterChange(e.target.value)}
         displayEmpty
         sx={{ mb: 3, minWidth: 200 }}
       >
@@ -79,12 +84,16 @@ export default function NotificationsPage() {
         <MenuItem value="Event">Event</MenuItem>
       </Select>
 
-      {notifications.map((item) => {
-        const isRead = readIds.includes(item.ID);
+      {errorMessage && (
+        <Typography color="error" sx={{ mb: 2 }}>{errorMessage}</Typography>
+      )}
+
+      {notifications.map((notification) => {
+        const isRead = readNotificationIds.includes(notification.ID);
         return (
           <Card
-            key={item.ID}
-            onClick={() => markAsRead(item.ID)}
+            key={notification.ID}
+            onClick={() => markNotificationAsRead(notification.ID)}
             sx={{
               margin: 2,
               backgroundColor: isRead ? "#fafafa" : "#e3f2fd",
@@ -93,21 +102,21 @@ export default function NotificationsPage() {
             }}
           >
             <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6">{item.Message}</Typography>
+              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="h6">{notification.Message}</Typography>
                 {!isRead && <Chip label="Unread" color="primary" size="small" />}
               </Stack>
-              <Typography color="text.secondary" sx={{ mt: 0.5 }}>{item.Type}</Typography>
-              <Typography variant="caption">{item.Timestamp}</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.5 }}>{notification.Type}</Typography>
+              <Typography variant="caption">{notification.Timestamp}</Typography>
             </CardContent>
           </Card>
         );
       })}
 
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 3 }}>
-        <Button variant="outlined" disabled={currentPage === 1} onClick={goToPrev}>← Prev</Button>
+      <Stack direction="row" spacing={2} sx={{ mt: 3, alignItems: "center" }}>
+        <Button variant="outlined" disabled={currentPage === 1} onClick={goToPreviousPage}>← Prev</Button>
         <Typography>Page {currentPage}</Typography>
-        <Button variant="outlined" onClick={goToNext}>Next →</Button>
+        <Button variant="outlined" onClick={goToNextPage}>Next →</Button>
       </Stack>
     </Box>
   );

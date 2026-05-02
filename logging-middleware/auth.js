@@ -1,12 +1,13 @@
 import { appConfig } from "./config.js";
 
-// cache token so we don't keep hitting auth endpoint
-let cachedToken = null;
+// We cache the token in memory so we only hit the auth endpoint once per process run.
+// Calling auth repeatedly for every log entry would be wasteful and slow.
+let cachedAuthToken = null;
 
 export async function getAuthToken() {
-  if (cachedToken) return cachedToken;
+  if (cachedAuthToken) return cachedAuthToken;
 
-  const resp = await fetch(`${appConfig.apiBase}/auth`, {
+  const response = await fetch(`${appConfig.apiBase}/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -19,7 +20,7 @@ export async function getAuthToken() {
     })
   });
 
-  const result = await resp.json();
-  cachedToken = result.access_token;
-  return cachedToken;
+  const data = await response.json();
+  cachedAuthToken = data.access_token;
+  return cachedAuthToken;
 }

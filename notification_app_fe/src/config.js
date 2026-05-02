@@ -1,6 +1,8 @@
-// central config — all API credentials live here
+// All API credentials and the base URL for the evaluation server live here.
+// The apiBase points to our local Next.js proxy which forwards requests server-side,
+// avoiding any mixed-content or CORS issues in the browser.
 export const appConfig = {
-  apiBase: "http://20.207.122.201/evaluation-service",
+  apiBase: "/api",
   userEmail: "vn9503@srmist.edu.in",
   userName: "vr nithin",
   userRoll: "ra2311003011845",

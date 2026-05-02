@@ -4,7 +4,7 @@ import { Box, Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const nav = useRouter();
+  const router = useRouter();
 
   return (
     <Box sx={{ p: 5, textAlign: "center" }}>
@@ -15,10 +15,10 @@ export default function HomePage() {
         View and manage your notifications
       </Typography>
       <Box sx={{ display: "flex", gap: 3, justifyContent: "center" }}>
-        <Button variant="contained" size="large" onClick={() => nav.push("/all")}>
+        <Button variant="contained" size="large" onClick={() => router.push("/all")}>
           All Notifications
         </Button>
-        <Button variant="outlined" size="large" onClick={() => nav.push("/priority")}>
+        <Button variant="outlined" size="large" onClick={() => router.push("/priority")}>
           Priority View
         </Button>
       </Box>
