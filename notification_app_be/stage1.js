@@ -49,7 +49,7 @@ async function getTopNotifications() {
 
     await Log("backend", "info", "handler", "Computed top 10 notifications");
 
-    console.log(top10);
+    await Log("backend", "info", "handler", `Top 10 notifications: ${JSON.stringify(top10)}`);
 
   } catch (err) {
     await Log("backend", "error", "handler", "Error in processing notifications");

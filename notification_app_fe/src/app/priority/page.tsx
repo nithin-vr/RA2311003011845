@@ -38,7 +38,7 @@ export default function PriorityPage() {
         value={limit}
         onChange={(e) => setLimit(Number(e.target.value))}
         sx={{ mb: 3, width: 120 }}
-        inputProps={{ min: 1, max: 50 }}
+        slotProps={{ htmlInput: { min: 1, max: 50 } }}
       />
 
       {data.map((n, i) => (
